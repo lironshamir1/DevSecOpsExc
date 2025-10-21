@@ -44,19 +44,19 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: JFrog Xray Scan
-        run: |
-          curl -fL https://install-cli.jfrog.io | sh
-          ./jfrog config add xray-server \
-            --url=${{ secrets.JFROG_URL }} \
-            --access-token=${{ secrets.JFROG_ACCESS_TOKEN }} \
-            --interactive=false
-          ./jfrog audit --format=json --output-file=xray-report.json || true
+  prisma-cloud-scan:
+    name: Prisma Cloud Security Scan
+    runs-on: ubuntu-latest
+    needs: security-scan
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Build Docker Image
         run: docker build -t vulnerable-dotnet-app:${{ github.sha }} dotnet/
 
-      - name: Prisma Cloud Scan
+      - name: Prisma Cloud Image Scan
         env:
           PRISMA_API_URL: ${{ secrets.PRISMA_API_URL }}
           PRISMA_ACCESS_KEY: ${{ secrets.PRISMA_ACCESS_KEY }}
@@ -78,5 +78,5 @@ jobs:
         with:
           name: security-reports
           path: |
-            xray-report.json
             sonar-report.json
+            twistcli-*.json

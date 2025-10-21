@@ -15,7 +15,7 @@ Each language version contains the same categories of security vulnerabilities a
 This is a training repository that contains multiple security vulnerabilities and code quality issues. The CI/CD pipeline is configured to fail when these issues are detected by:
 - **SonarQube** - Code quality and security analysis
 - **Prisma Cloud** - Container and IaC security scanning
-- **JFrog Xray** - Dependency vulnerability scanner
+
 
 **Deployment Platform**: OpenShift (Red Hat)
 **Secret Management**: HashiCorp Vault
@@ -138,18 +138,14 @@ vault write database/config/postgresql \
 The GitHub Actions pipeline (`.github/workflows/security-scan.yml`) includes:
 
 1. **SonarQube Scan** - Code quality and security analysis
-2. **JFrog Xray Scan** - Dependency vulnerability detection
-3. **Prisma Cloud Scan** - Container image and IaC scanning
-4. **Unit Tests** - pytest with coverage
+2. **Prisma Cloud Scan** - Container image and IaC scanning
+3. **Unit Tests** - pytest with coverage
 
 ### Required GitHub Secrets
 
 ```
 SONAR_TOKEN=<your-sonarqube-token>
 SONAR_HOST_URL=<your-sonarqube-url>
-
-JFROG_URL=<your-jfrog-url>
-JFROG_ACCESS_TOKEN=<your-jfrog-token>
 
 PRISMA_API_URL=<your-prisma-cloud-api-url>
 PRISMA_ACCESS_KEY=<your-prisma-access-key>
@@ -196,7 +192,7 @@ See `SOLUTIONS.md` for detailed explanations and fixes for each vulnerability ca
 │   └── test_app.py                     # Unit tests
 ├── .github/
 │   └── workflows/
-│       └── security-scan.yml           # CI/CD pipeline (SonarQube, Xray, Prisma)
+│       └── security-scan.yml           # CI/CD pipeline (SonarQube, Prisma)
 ├── sonar-project.properties            # SonarQube configuration
 ├── .env.example                        # Environment variables template
 ├── README.md                           # This file
@@ -208,7 +204,7 @@ See `SOLUTIONS.md` for detailed explanations and fixes for each vulnerability ca
 
 By completing this exercise, you will learn:
 
-- How to identify security vulnerabilities using SonarQube, Prisma Cloud, and Xray
+- How to identify security vulnerabilities using SonarQube and Prisma Cloud
 - How to deploy applications securely on OpenShift
 - How to integrate HashiCorp Vault for secret management
 - How to implement secure coding practices in Python
@@ -225,7 +221,6 @@ By completing this exercise, you will learn:
 - [OWASP Python Security](https://owasp.org/www-project-python-security/)
 - [SonarQube Python Analysis](https://docs.sonarqube.org/latest/analysis/languages/python/)
 - [Prisma Cloud Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
-- [JFrog Xray Documentation](https://www.jfrog.com/confluence/display/JFROG/JFrog+Xray)
 - [OpenShift Documentation](https://docs.openshift.com/)
 - [HashiCorp Vault](https://www.vaultproject.io/docs)
 - [Container Security Best Practices](https://cloud.google.com/architecture/best-practices-for-building-containers)

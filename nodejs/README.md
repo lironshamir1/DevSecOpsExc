@@ -10,7 +10,7 @@ Intentionally vulnerable Node.js/Express application for practicing DevSecOps se
 - **Deployment**: OpenShift (Red Hat)
 - **Secret Management**: HashiCorp Vault
 - **Database**: MySQL, MongoDB
-- **Security Tools**: SonarQube, Prisma Cloud, JFrog Xray
+- **Security Tools**: SonarQube and Prisma Cloud
 
 ## Security Vulnerabilities Included
 
@@ -100,7 +100,6 @@ oc expose svc/vulnerable-nodejs-app
 The pipeline includes:
 
 1. **SonarQube** - Code quality and security analysis
-2. **JFrog Xray** - npm dependency vulnerability scanning
 3. **Prisma Cloud** - Container image security scanning
 
 ### Required GitHub Secrets
@@ -108,8 +107,6 @@ The pipeline includes:
 ```
 SONAR_TOKEN
 SONAR_HOST_URL
-JFROG_URL
-JFROG_ACCESS_TOKEN
 PRISMA_API_URL
 PRISMA_ACCESS_KEY
 PRISMA_SECRET_KEY
