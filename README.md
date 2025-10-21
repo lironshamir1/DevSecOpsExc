@@ -1,149 +1,167 @@
 # DevSecOps Practice Repository - Multi-Language
 
-This repository contains intentionally vulnerable applications in **Python**, **.NET/C#**, and **Node.js/JavaScript** designed for practicing DevSecOps security scanning and remediation workflows.
+Intentionally vulnerable applications in **Python**, **.NET/C#**, and **Node.js/JavaScript** for practicing DevSecOps security scanning and remediation with **OpenShift** deployment.
 
-## Available Languages
+## 🎯 Purpose
 
-- **Python** (`/` - root directory) - Flask application
-- **.NET/C#** (`/dotnet`) - ASP.NET Core application
-- **Node.js/JavaScript** (`/nodejs`) - Express.js application
-
-Each language version contains the same categories of security vulnerabilities adapted to the specific technology stack.
-
-## Purpose
-
-This is a training repository that contains multiple security vulnerabilities and code quality issues. The CI/CD pipeline is configured to fail when these issues are detected by:
+Train developers to identify and fix security vulnerabilities using industry-standard tools:
 - **SonarQube** - Code quality and security analysis
-- **Prisma Cloud** - Container and IaC security scanning
+- **Prisma Cloud** - Container and infrastructure scanning
 
+All applications are designed to **fail** CI/CD pipelines until vulnerabilities are fixed!
 
-**Deployment Platform**: OpenShift (Red Hat)
-**Secret Management**: HashiCorp Vault
+## 📁 Repository Structure
 
-## The Challenge
-
-1. Fork or clone this repository
-2. Run the CI/CD pipeline - it will **FAIL** due to security issues
-3. Fix the vulnerabilities one by one
-4. Push your changes and verify the pipeline passes
-5. Learn DevSecOps best practices along the way!
-
-## Intentional Vulnerabilities Included
-
-This repository contains the following categories of security issues:
-
-### 1. **Hardcoded Secrets**
-- Database credentials in source code
-- API keys embedded in code
-- Hardcoded encryption keys
-
-### 2. **SQL Injection**
-- Unsafe database queries using string concatenation
-- Missing input validation
-
-### 3. **Command Injection**
-- Unsafe use of `os.system()` and `subprocess` with user input
-- Missing input sanitization
-
-### 4. **Insecure Cryptography**
-- Use of weak hashing algorithms (MD5, SHA1)
-- Insecure password storage
-- Weak encryption methods
-
-### 5. **Path Traversal**
-- Unsafe file operations with user-controlled input
-- Missing path validation
-
-### 6. **Insecure Deserialization**
-- Using `pickle` with untrusted data
-- Unsafe YAML loading
-
-### 7. **Vulnerable Dependencies**
-- Outdated packages with known CVEs
-- Insecure package versions
-
-### 8. **Missing Security Headers**
-- No CSRF protection
-- Missing security headers
-- Insecure session configuration
-
-### 9. **Code Quality Issues**
-- High complexity functions
-- Code duplication
-- Poor error handling
-
-### 10. **Information Disclosure**
-- Debug mode enabled in production
-- Verbose error messages
-- Exposed internal paths
-
-## Getting Started
-
-### Prerequisites
-```bash
-# Install Python 3.8+
-python3 --version
-
-# Install dependencies
-pip install -r requirements.txt
+```
+DevSecOpsExc/
+├── python/          # Python/Flask vulnerable application
+├── dotnet/          # .NET/C# ASP.NET Core vulnerable application
+├── nodejs/          # Node.js/Express vulnerable application
+└── README.md        # This file
 ```
 
-### Running the Application
+## 🚀 Quick Start
+
+### Choose Your Language
+
+<table>
+<tr>
+<th>Python</th>
+<th>.NET/C#</th>
+<th>Node.js</th>
+</tr>
+<tr>
+<td>
+
 ```bash
-# Run the vulnerable application (DO NOT USE IN PRODUCTION!)
+cd python
+pip install -r requirements.txt
 python app.py
 ```
 
-### Deploying to OpenShift
+</td>
+<td>
 
 ```bash
-# Login to OpenShift
-oc login https://openshift.example.com
-
-# Create new project
-oc new-project devsecops-practice
-
-# Deploy the vulnerable application
-oc apply -f openshift/deployment-config.yml
-
-# Build from source
-oc apply -f openshift/build-config.yml
-oc start-build vulnerable-app
-
-# View logs
-oc logs -f dc/vulnerable-app
+cd dotnet
+dotnet restore
+dotnet run
 ```
 
-### HashiCorp Vault Setup
+</td>
+<td>
 
 ```bash
-# Set Vault address
-export VAULT_ADDR=https://vault.example.com:8200
-
-# Store secrets in Vault
-vault kv put secret/secure-app/config \
-  secret_key="your-secret-key" \
-  api_key="your-api-key"
-
-# Configure dynamic database credentials
-vault secrets enable database
-vault write database/config/postgresql \
-  plugin_name=postgresql-database-plugin \
-  allowed_roles="app-role" \
-  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/appdb"
+cd nodejs
+npm install
+npm start
 ```
 
-## CI/CD Pipeline
+</td>
+</tr>
+<tr>
+<td>http://localhost:5000</td>
+<td>http://localhost:5000</td>
+<td>http://localhost:3000</td>
+</tr>
+<tr>
+<td><a href="python/README.md">Python README →</a></td>
+<td><a href="dotnet/README.md">.NET README →</a></td>
+<td><a href="nodejs/README.md">Node.js README →</a></td>
+</tr>
+</table>
 
-The GitHub Actions pipeline (`.github/workflows/security-scan.yml`) includes:
+## 🔒 Security Vulnerabilities Included
 
-1. **SonarQube Scan** - Code quality and security analysis
-2. **Prisma Cloud Scan** - Container image and IaC scanning
-3. **Unit Tests** - pytest with coverage
+Each language version contains **the same vulnerability categories** adapted to the technology stack:
 
-### Required GitHub Secrets
+| Category | Python | .NET | Node.js |
+|----------|--------|------|---------|
+| **SQL Injection** | ✓ | ✓ | ✓ |
+| **Command Injection** | ✓ | ✓ | ✓ |
+| **Hardcoded Secrets** | ✓ | ✓ | ✓ |
+| **Weak Cryptography** | ✓ | ✓ | ✓ |
+| **Path Traversal** | ✓ | ✓ | ✓ |
+| **Insecure Deserialization** | ✓ | ✓ | ✓ |
+| **XXE** | ✓ | ✓ | ✓ |
+| **Vulnerable Dependencies** | ✓ | ✓ | ✓ |
+| **Information Disclosure** | ✓ | ✓ | ✓ |
+| **Code Quality Issues** | ✓ | ✓ | ✓ |
 
+### Language-Specific Vulnerabilities
+
+**Python:**
+- SSTI (Server-Side Template Injection)
+- pickle deserialization
+- unsafe `subprocess` usage
+
+**.NET/C#:**
+- TypeNameHandling.All (JSON.NET)
+- Entity Framework injection
+- unsafe `Process.Start()`
+
+**Node.js:**
+- NoSQL injection (MongoDB)
+- `eval()` and `exec()` vulnerabilities
+- Prototype pollution
+
+## 🔧 Technology Stack
+
+| Component | Python | .NET | Node.js |
+|-----------|--------|------|---------|
+| **Framework** | Flask | ASP.NET Core 6.0 | Express.js 4.x |
+| **Runtime** | Python 3.9 | .NET 6.0 | Node.js 14.x |
+| **Database** | SQLite/PostgreSQL | SQL Server | MySQL/MongoDB |
+| **Secrets** | HashiCorp Vault | HashiCorp Vault | HashiCorp Vault |
+| **Deployment** | OpenShift | OpenShift | OpenShift |
+
+## 🔍 Security Tools Integration
+
+### SonarQube
+- Static code analysis
+- Security hotspot detection
+- Code quality metrics
+- Quality gate enforcement
+
+### Prisma Cloud (Twistlock)
+- Container image scanning
+- Infrastructure as Code analysis
+- Runtime protection
+- Compliance checking
+
+## 🏗️ Deployment to OpenShift
+
+Each language has OpenShift deployment configurations:
+
+```bash
+# Python
+oc apply -f python/openshift/deployment-config.yml
+
+# .NET
+oc new-app dotnet:6.0~. --context-dir=dotnet --name=vulnerable-dotnet-app
+
+# Node.js
+oc new-app nodejs:14~. --context-dir=nodejs --name=vulnerable-nodejs-app
 ```
+
+## 📊 CI/CD Pipeline
+
+Each language has a dedicated GitHub Actions workflow:
+
+- `python/.github/workflows/security-scan.yml`
+- `dotnet/.github/workflows/security-scan.yml`
+- `nodejs/.github/workflows/security-scan.yml`
+
+### Pipeline Steps:
+
+1. **Build & Test** - Compile and run unit tests
+2. **SonarQube Scan** - Code quality and security analysis
+3. **Prisma Cloud Scan** - Container security scanning
+4. **Quality Gate** - **FAILS** if vulnerabilities found
+
+### Required GitHub Secrets:
+
+```bash
 SONAR_TOKEN=<your-sonarqube-token>
 SONAR_HOST_URL=<your-sonarqube-url>
 
@@ -152,108 +170,70 @@ PRISMA_ACCESS_KEY=<your-prisma-access-key>
 PRISMA_SECRET_KEY=<your-prisma-secret-key>
 ```
 
-All scans must pass for the pipeline to succeed.
+## 🎓 Learning Path
 
-## How to Fix the Issues
+### 1. Choose a Language
+Pick the language you want to practice with (Python, .NET, or Node.js)
 
-See `SOLUTIONS.md` for detailed explanations and fixes for each vulnerability category. Try to fix them yourself first before checking the solutions!
-
-### Recommended Fix Order
-
-1. Start with **hardcoded secrets** - move to environment variables
-2. Fix **SQL injection** - use parameterized queries
-3. Fix **command injection** - validate and sanitize inputs
-4. Update **vulnerable dependencies** - upgrade to secure versions
-5. Fix **cryptography issues** - use strong algorithms
-6. Add **input validation** - validate all user inputs
-7. Improve **code quality** - refactor complex functions
-8. Add **security headers** - implement proper security controls
-
-## Repository Structure
-
-```
-.
-├── app.py                              # Vulnerable Flask application
-├── app_secure.py                       # Secure version with Vault integration
-├── database.py                         # Database operations
-├── crypto_utils.py                     # Cryptography utilities
-├── file_handler.py                     # File operations
-├── admin.py                            # Admin functions
-├── vault_integration.py                # HashiCorp Vault client
-├── requirements.txt                    # Dependencies
-├── Dockerfile                          # Vulnerable container image
-├── Dockerfile.secure                   # Secure OpenShift-compatible image
-├── docker-compose.yml                  # Local development environment
-├── openshift/
-│   ├── deployment-config.yml           # OpenShift deployment (vulnerable)
-│   ├── deployment-config-secure.yml    # Secure deployment with Vault
-│   └── build-config.yml                # OpenShift build configuration
-├── tests/
-│   └── test_app.py                     # Unit tests
-├── .github/
-│   └── workflows/
-│       └── security-scan.yml           # CI/CD pipeline (SonarQube, Prisma)
-├── sonar-project.properties            # SonarQube configuration
-├── .env.example                        # Environment variables template
-├── README.md                           # This file
-├── SOLUTIONS.md                        # Fixes for all vulnerabilities
-└── CONTRIBUTING.md                     # Exercise workflow guide
+### 2. Run Locally
+```bash
+cd <language>
+# Install dependencies
+# Run the application
+# Explore the vulnerable endpoints
 ```
 
-## Learning Objectives
+### 3. Run Security Scans
+```bash
+# Push code to trigger CI/CD
+git add .
+git commit -m "Initial commit"
+git push
 
-By completing this exercise, you will learn:
+# Pipeline will FAIL - review the scan results
+```
 
-- How to identify security vulnerabilities using SonarQube and Prisma Cloud
-- How to deploy applications securely on OpenShift
-- How to integrate HashiCorp Vault for secret management
-- How to implement secure coding practices in Python
-- How to configure CI/CD pipelines for DevSecOps
-- How to run containers as non-root users
-- How to write secure database queries
-- How to handle user input safely
-- How to fix dependency vulnerabilities
-- How to implement security headers and rate limiting
+### 4. Fix Vulnerabilities
+- Review SonarQube findings
+- Check Prisma Cloud reports
+- Read the SOLUTIONS.md in each language folder
+- Fix issues one by one
 
-## Additional Resources
+### 5. Verify Fixes
+```bash
+# Push fixes
+git push
+
+# Pipeline should PASS when all issues fixed ✅
+```
+
+## 📚 Documentation
+
+Each language folder contains comprehensive documentation:
+
+- **README.md** - Getting started guide
+- **SOLUTIONS.md** - Detailed fixes for all vulnerabilities
+- **CONTRIBUTING.md** - Exercise workflow
+
+## ⚠️ Warning
+
+**DO NOT deploy these applications to production or any public environment!**
+
+This code contains **intentional security vulnerabilities** for educational purposes only.
+
+## 🔗 Additional Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [OWASP Python Security](https://owasp.org/www-project-python-security/)
-- [SonarQube Python Analysis](https://docs.sonarqube.org/latest/analysis/languages/python/)
-- [Prisma Cloud Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
 - [OpenShift Documentation](https://docs.openshift.com/)
 - [HashiCorp Vault](https://www.vaultproject.io/docs)
-- [Container Security Best Practices](https://cloud.google.com/architecture/best-practices-for-building-containers)
+- [SonarQube](https://docs.sonarqube.org/)
+- [Prisma Cloud](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
 
-## Warning
+## 📄 License
 
-**DO NOT deploy this application to production or any public environment!**
+Educational repository for security training purposes.
 
-This code contains intentional security vulnerabilities for educational purposes only.
+---
 
-## Working with Different Languages
+**Choose your language and start practicing DevSecOps! 🚀**
 
-This repository contains three complete DevSecOps practice environments:
-
-### Python (Root Directory)
-- Flask web application
-- See root README.md for details
-- Run: `python app.py`
-
-### .NET/C# (`/dotnet`)
-- ASP.NET Core Web API
-- See `dotnet/README.md` for details
-- Run: `cd dotnet && dotnet run`
-
-### Node.js/JavaScript (`/nodejs`)
-- Express.js application
-- See `nodejs/README.md` for details
-- Run: `cd nodejs && npm start`
-
-### Language-Specific Vulnerabilities
-
-Each version contains the same vulnerability categories adapted to the technology stack. Choose the language you want to practice with!
-
-## License
-
-This is an educational repository for security training purposes.
