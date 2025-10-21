@@ -1,6 +1,14 @@
-# DevSecOps Practice Repository - Python
+# DevSecOps Practice Repository - Multi-Language
 
-This repository contains intentionally vulnerable Python code designed for practicing DevSecOps security scanning and remediation workflows.
+This repository contains intentionally vulnerable applications in **Python**, **.NET/C#**, and **Node.js/JavaScript** designed for practicing DevSecOps security scanning and remediation workflows.
+
+## Available Languages
+
+- **Python** (`/` - root directory) - Flask application
+- **.NET/C#** (`/dotnet`) - ASP.NET Core application
+- **Node.js/JavaScript** (`/nodejs`) - Express.js application
+
+Each language version contains the same categories of security vulnerabilities adapted to the specific technology stack.
 
 ## Purpose
 
@@ -228,11 +236,28 @@ By completing this exercise, you will learn:
 
 This code contains intentional security vulnerabilities for educational purposes only.
 
-## Next Steps
+## Working with Different Languages
 
-Once you complete the Python repository:
-- **.NET Repository** - Similar exercises in C#/.NET
-- **JavaScript Repository** - Similar exercises in Node.js/JavaScript
+This repository contains three complete DevSecOps practice environments:
+
+### Python (Root Directory)
+- Flask web application
+- See root README.md for details
+- Run: `python app.py`
+
+### .NET/C# (`/dotnet`)
+- ASP.NET Core Web API
+- See `dotnet/README.md` for details
+- Run: `cd dotnet && dotnet run`
+
+### Node.js/JavaScript (`/nodejs`)
+- Express.js application
+- See `nodejs/README.md` for details
+- Run: `cd nodejs && npm start`
+
+### Language-Specific Vulnerabilities
+
+Each version contains the same vulnerability categories adapted to the technology stack. Choose the language you want to practice with!
 
 ## License
 
