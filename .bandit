@@ -1,0 +1,29 @@
+# Bandit configuration file
+# https://bandit.readthedocs.io/
+
+[bandit]
+# Exclude directories
+exclude_dirs = /tests,/venv,/env,/.pytest_cache,/__pycache__
+
+# Test IDs to skip (none - we want all security checks for this exercise)
+# skips =
+
+# Test IDs to run (all)
+tests =
+
+# Set confidence level (LOW, MEDIUM, HIGH)
+# Report all confidence levels
+level = LOW
+
+# Severity level threshold (LOW, MEDIUM, HIGH)
+# Report all severity levels
+severity = LOW
+
+# Output format (json, txt, csv, html, xml)
+format = json
+
+# Show code snippets
+show_source = True
+
+# Recursive scan
+recursive = True
