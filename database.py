@@ -7,7 +7,7 @@ import sqlite3
 import hashlib
 
 
-# VULNERABILITY: Hardcoded database credentials
+
 DATABASE_URL = "postgresql://admin:SuperSecret123@db.example.com:5432/proddb"
 BACKUP_DB_PASSWORD = "backup_pass_9876"
 
@@ -17,11 +17,11 @@ class DatabaseManager:
 
     def __init__(self, db_path='users.db'):
         self.db_path = db_path
-        # VULNERABILITY: Hardcoded connection string
+        
         self.connection_string = f"sqlite:///{db_path}?password=hardcoded123"
 
     def get_user_by_id(self, user_id):
-        """VULNERABILITY: SQL Injection via string formatting"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -34,7 +34,7 @@ class DatabaseManager:
         return result
 
     def search_users(self, search_term):
-        """VULNERABILITY: SQL Injection in LIKE clause"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -47,7 +47,7 @@ class DatabaseManager:
         return results
 
     def update_user_email(self, username, new_email):
-        """VULNERABILITY: SQL Injection in UPDATE statement"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -59,7 +59,7 @@ class DatabaseManager:
         conn.close()
 
     def delete_user(self, user_id):
-        """VULNERABILITY: SQL Injection in DELETE statement"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -71,14 +71,14 @@ class DatabaseManager:
         conn.close()
 
     def authenticate_user(self, username, password):
-        """VULNERABILITY: Multiple issues - SQL injection + weak hashing"""
-        # VULNERABILITY: MD5 hashing
+        
+        
         password_hash = hashlib.md5(password.encode()).hexdigest()
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # VULNERABILITY: SQL injection
+        
         query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password_hash}'"
         cursor.execute(query)
 
@@ -88,7 +88,7 @@ class DatabaseManager:
         return result is not None
 
     def get_user_orders(self, user_id, status=None):
-        """VULNERABILITY: SQL Injection with optional parameter"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -104,11 +104,11 @@ class DatabaseManager:
         return results
 
     def execute_raw_query(self, query):
-        """VULNERABILITY: Direct query execution - allows any SQL"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # VULNERABILITY: No validation or sanitization
+        
         cursor.execute(query)
 
         try:
@@ -121,7 +121,7 @@ class DatabaseManager:
         return results
 
     def batch_update_users(self, updates):
-        """VULNERABILITY: SQL Injection in batch operations"""
+        
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
@@ -160,7 +160,7 @@ def init_database():
         )
     ''')
 
-    # VULNERABILITY: Inserting with weak password hashes
+    
     sample_users = [
         (1, 'admin', 'admin@example.com', hashlib.md5(b'admin123').hexdigest(), 'admin'),
         (2, 'user1', 'user1@example.com', hashlib.md5(b'password').hexdigest(), 'user'),

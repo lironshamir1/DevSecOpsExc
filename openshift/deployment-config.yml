@@ -1,0 +1,123 @@
+---
+# VULNERABLE OpenShift DeploymentConfig - FOR TRAINING ONLY
+# This configuration contains intentional security issues
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: vulnerable-app
+  labels:
+    app: vulnerable-app
+    tier: backend
+  annotations:
+    description: "Intentionally vulnerable application for DevSecOps training"
+spec:
+  replicas: 1
+  selector:
+    app: vulnerable-app
+    deploymentconfig: vulnerable-app
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: vulnerable-app
+        deploymentconfig: vulnerable-app
+    spec:
+      containers:
+      - name: vulnerable-app
+        image: vulnerable-app:latest
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        env:
+        - name: SECRET_KEY
+          value: "hardcoded-secret-key-12345"
+        - name: DB_PASSWORD
+          value: "password123"
+        - name: API_KEY
+          value: "sk-1234567890abcdef"
+        - name: DEBUG
+          value: "True"
+        - name: DB_HOST
+          value: "postgresql"
+        - name: DB_USER
+          value: "admin"
+
+        resources: {}
+
+        # livenessProbe: {}
+        # readinessProbe: {}
+
+        securityContext: {}
+          # allowPrivilegeEscalation: false
+          # runAsNonRoot: true
+          # capabilities:
+
+        volumeMounts:
+        - name: app-data
+          mountPath: /data
+
+      securityContext: {}
+        # runAsNonRoot: true
+        # fsGroup: 1000
+
+      # serviceAccountName: vulnerable-app-sa
+
+      volumes:
+      - name: app-data
+        emptyDir: {}
+
+  triggers:
+  - type: ConfigChange
+  - type: ImageChange
+    imageChangeParams:
+      automatic: true
+      containerNames:
+      - vulnerable-app
+      from:
+        kind: ImageStreamTag
+        name: vulnerable-app:latest
+
+---
+# Service for the vulnerable application
+apiVersion: v1
+kind: Service
+metadata:
+  name: vulnerable-app
+  labels:
+    app: vulnerable-app
+spec:
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: vulnerable-app
+    deploymentconfig: vulnerable-app
+  type: ClusterIP
+  sessionAffinity: None
+
+---
+# VULNERABLE Route - Exposes application without TLS
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: vulnerable-app
+  labels:
+    app: vulnerable-app
+spec:
+  to:
+    kind: Service
+    name: vulnerable-app
+    weight: 100
+  port:
+    targetPort: http
+  # tls:
+  wildcardPolicy: None

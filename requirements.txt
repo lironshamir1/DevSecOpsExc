@@ -1,55 +1,20 @@
-# VULNERABLE DEPENDENCIES - DO NOT USE IN PRODUCTION
-# These are intentionally outdated versions with known CVEs
-
-# Flask with known vulnerabilities
 Flask==2.0.1
-
-# Werkzeug with security issues
 Werkzeug==2.0.1
-
-# Jinja2 with SSTI vulnerabilities
 Jinja2==2.11.3
-
-# Requests with vulnerabilities
 requests==2.25.0
-
-# PyYAML with unsafe loading
 PyYAML==5.3.1
-
-# Cryptography library (old version)
 pycryptodome==3.9.0
-
-# SQLAlchemy with vulnerabilities
 SQLAlchemy==1.3.0
-
-# Pillow with image processing vulnerabilities
 Pillow==8.1.0
-
-# lxml with XXE vulnerabilities
 lxml==4.6.2
-
-# urllib3 with security issues
 urllib3==1.26.4
-
-# Django (if used) - old version
 Django==2.2.0
-
-# paramiko with known issues
 paramiko==2.7.1
-
-# httplib2 with vulnerabilities
 httplib2==0.18.0
-
-# Testing and development
 pytest==6.2.2
-bandit==1.7.0
-safety==1.10.3
-
-# Code quality
-pylint==2.7.0
-flake8==3.8.4
-
-# Additional vulnerable packages
 beautifulsoup4==4.9.0
 certifi==2020.12.5
 idna==2.10
+hvac==0.11.2
+flask-talisman==0.8.1
+flask-limiter==1.4

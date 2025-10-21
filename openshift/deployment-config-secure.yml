@@ -1,0 +1,244 @@
+---
+# SECURE OpenShift DeploymentConfig with Vault Integration
+# This is the FIXED version for production use
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: secure-app
+  labels:
+    app: secure-app
+    tier: backend
+  annotations:
+    description: "Secure application with Vault integration"
+spec:
+  replicas: 2
+  selector:
+    app: secure-app
+    deploymentconfig: secure-app
+  strategy:
+    type: Rolling
+    rollingParams:
+      updatePeriodSeconds: 1
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      maxSurge: 25%
+      maxUnavailable: 25%
+      pre:
+        failurePolicy: Abort
+        execNewPod:
+          containerName: secure-app
+          command: ["/bin/sh", "-c", "echo Pre-deployment check"]
+  template:
+    metadata:
+      labels:
+        app: secure-app
+        deploymentconfig: secure-app
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "secure-app"
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/secure-app/config"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- with secret "secret/data/secure-app/config" -}}
+          export SECRET_KEY="{{ .Data.data.secret_key }}"
+          export DB_PASSWORD="{{ .Data.data.db_password }}"
+          export API_KEY="{{ .Data.data.api_key }}"
+          {{- end }}
+    spec:
+      serviceAccountName: secure-app-sa
+
+      containers:
+      - name: secure-app
+        image: secure-app:latest
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+          name: http
+
+        env:
+        # Configuration from Vault (injected by Vault Agent)
+        - name: VAULT_ADDR
+          value: "https://vault.example.com:8200"
+        - name: DEBUG
+          value: "False"
+        - name: FLASK_ENV
+          value: "production"
+
+        # Secrets are loaded from Vault-injected files
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            source /vault/secrets/config
+            python app.py
+
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: RuntimeDefault
+
+        volumeMounts:
+        - name: app-data
+          mountPath: /data
+          readOnly: false
+
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      volumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: app-data-pvc
+
+  triggers:
+  - type: ConfigChange
+  - type: ImageChange
+    imageChangeParams:
+      automatic: true
+      containerNames:
+      - secure-app
+      from:
+        kind: ImageStreamTag
+        name: secure-app:latest
+
+---
+# Secure Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: secure-app
+  labels:
+    app: secure-app
+spec:
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: secure-app
+    deploymentconfig: secure-app
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+# Secure Route with TLS
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: secure-app
+  labels:
+    app: secure-app
+spec:
+  to:
+    kind: Service
+    name: secure-app
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
+
+---
+# Service Account for Vault authentication
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secure-app-sa
+  labels:
+    app: secure-app
+
+---
+# PersistentVolumeClaim for application data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-data-pvc
+  labels:
+    app: secure-app
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# NetworkPolicy to restrict traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: secure-app-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app: secure-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 5000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgresql
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: vault
+    ports:
+    - protocol: TCP
+      port: 8200

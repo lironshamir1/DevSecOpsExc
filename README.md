@@ -7,8 +7,10 @@ This repository contains intentionally vulnerable Python code designed for pract
 This is a training repository that contains multiple security vulnerabilities and code quality issues. The CI/CD pipeline is configured to fail when these issues are detected by:
 - **SonarQube** - Code quality and security analysis
 - **Prisma Cloud** - Container and IaC security scanning
-- **Bandit** - Python security linter
-- **Safety** - Dependency vulnerability scanner
+- **JFrog Xray** - Dependency vulnerability scanner
+
+**Deployment Platform**: OpenShift (Red Hat)
+**Secret Management**: HashiCorp Vault
 
 ## The Challenge
 
@@ -84,28 +86,67 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### Running Security Scans Locally
+### Deploying to OpenShift
 
 ```bash
-# Run Bandit for security issues
-bandit -r . -f json -o bandit-report.json
+# Login to OpenShift
+oc login https://openshift.example.com
 
-# Check for vulnerable dependencies
-safety check --json
+# Create new project
+oc new-project devsecops-practice
 
-# Run pytest
-pytest tests/
+# Deploy the vulnerable application
+oc apply -f openshift/deployment-config.yml
+
+# Build from source
+oc apply -f openshift/build-config.yml
+oc start-build vulnerable-app
+
+# View logs
+oc logs -f dc/vulnerable-app
+```
+
+### HashiCorp Vault Setup
+
+```bash
+# Set Vault address
+export VAULT_ADDR=https://vault.example.com:8200
+
+# Store secrets in Vault
+vault kv put secret/secure-app/config \
+  secret_key="your-secret-key" \
+  api_key="your-api-key"
+
+# Configure dynamic database credentials
+vault secrets enable database
+vault write database/config/postgresql \
+  plugin_name=postgresql-database-plugin \
+  allowed_roles="app-role" \
+  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/appdb"
 ```
 
 ## CI/CD Pipeline
 
 The GitHub Actions pipeline (`.github/workflows/security-scan.yml`) includes:
 
-1. **Code Quality Analysis** - SonarQube scan
-2. **Security Scanning** - Bandit, Safety
-3. **Container Scanning** - Prisma Cloud (Twistlock)
+1. **SonarQube Scan** - Code quality and security analysis
+2. **JFrog Xray Scan** - Dependency vulnerability detection
+3. **Prisma Cloud Scan** - Container image and IaC scanning
 4. **Unit Tests** - pytest with coverage
-5. **SAST Analysis** - Static Application Security Testing
+
+### Required GitHub Secrets
+
+```
+SONAR_TOKEN=<your-sonarqube-token>
+SONAR_HOST_URL=<your-sonarqube-url>
+
+JFROG_URL=<your-jfrog-url>
+JFROG_ACCESS_TOKEN=<your-jfrog-token>
+
+PRISMA_API_URL=<your-prisma-cloud-api-url>
+PRISMA_ACCESS_KEY=<your-prisma-access-key>
+PRISMA_SECRET_KEY=<your-prisma-secret-key>
+```
 
 All scans must pass for the pipeline to succeed.
 
@@ -128,43 +169,58 @@ See `SOLUTIONS.md` for detailed explanations and fixes for each vulnerability ca
 
 ```
 .
-├── app.py                          # Main vulnerable Flask application
-├── database.py                     # Database operations (SQL injection)
-├── crypto_utils.py                 # Cryptography utilities (weak crypto)
-├── file_handler.py                 # File operations (path traversal)
-├── admin.py                        # Admin functions (command injection)
-├── requirements.txt                # Vulnerable dependencies
-├── tests/                          # Unit tests
-│   └── test_app.py
+├── app.py                              # Vulnerable Flask application
+├── app_secure.py                       # Secure version with Vault integration
+├── database.py                         # Database operations
+├── crypto_utils.py                     # Cryptography utilities
+├── file_handler.py                     # File operations
+├── admin.py                            # Admin functions
+├── vault_integration.py                # HashiCorp Vault client
+├── requirements.txt                    # Dependencies
+├── Dockerfile                          # Vulnerable container image
+├── Dockerfile.secure                   # Secure OpenShift-compatible image
+├── docker-compose.yml                  # Local development environment
+├── openshift/
+│   ├── deployment-config.yml           # OpenShift deployment (vulnerable)
+│   ├── deployment-config-secure.yml    # Secure deployment with Vault
+│   └── build-config.yml                # OpenShift build configuration
+├── tests/
+│   └── test_app.py                     # Unit tests
 ├── .github/
 │   └── workflows/
-│       └── security-scan.yml       # CI/CD pipeline
-├── sonar-project.properties        # SonarQube configuration
-├── .bandit                         # Bandit configuration
-├── README.md                       # This file
-└── SOLUTIONS.md                    # Solutions and explanations
+│       └── security-scan.yml           # CI/CD pipeline (SonarQube, Xray, Prisma)
+├── sonar-project.properties            # SonarQube configuration
+├── .env.example                        # Environment variables template
+├── README.md                           # This file
+├── SOLUTIONS.md                        # Fixes for all vulnerabilities
+└── CONTRIBUTING.md                     # Exercise workflow guide
 ```
 
 ## Learning Objectives
 
 By completing this exercise, you will learn:
 
-- How to identify common security vulnerabilities in Python code
-- How to use security scanning tools (SonarQube, Bandit, Safety)
-- How to remediate security issues following best practices
-- How to implement secure coding practices
-- How to configure CI/CD pipelines for security
-- How to use secrets management properly
+- How to identify security vulnerabilities using SonarQube, Prisma Cloud, and Xray
+- How to deploy applications securely on OpenShift
+- How to integrate HashiCorp Vault for secret management
+- How to implement secure coding practices in Python
+- How to configure CI/CD pipelines for DevSecOps
+- How to run containers as non-root users
 - How to write secure database queries
 - How to handle user input safely
+- How to fix dependency vulnerabilities
+- How to implement security headers and rate limiting
 
 ## Additional Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OWASP Python Security](https://owasp.org/www-project-python-security/)
-- [Bandit Documentation](https://bandit.readthedocs.io/)
 - [SonarQube Python Analysis](https://docs.sonarqube.org/latest/analysis/languages/python/)
 - [Prisma Cloud Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
+- [JFrog Xray Documentation](https://www.jfrog.com/confluence/display/JFROG/JFrog+Xray)
+- [OpenShift Documentation](https://docs.openshift.com/)
+- [HashiCorp Vault](https://www.vaultproject.io/docs)
+- [Container Security Best Practices](https://cloud.google.com/architecture/best-practices-for-building-containers)
 
 ## Warning
 
