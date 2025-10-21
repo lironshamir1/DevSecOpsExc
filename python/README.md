@@ -1,14 +1,8 @@
-# DevSecOps Practice Repository - Multi-Language
+# DevSecOps Practice Repository - Python
 
-This repository contains intentionally vulnerable applications in **Python**, **.NET/C#**, and **Node.js/JavaScript** designed for practicing DevSecOps security scanning and remediation workflows.
+Intentionally vulnerable Python/Flask application for practicing DevSecOps security scanning and remediation with OpenShift deployment.
 
-## Available Languages
-
-- **Python** (`/` - root directory) - Flask application
-- **.NET/C#** (`/dotnet`) - ASP.NET Core application
-- **Node.js/JavaScript** (`/nodejs`) - Express.js application
-
-Each language version contains the same categories of security vulnerabilities adapted to the specific technology stack.
+> **Note:** This repository also includes [.NET](../dotnet/) and [Node.js](../nodejs/) versions. [See main README](../README.md) for all languages.
 
 ## Purpose
 
@@ -231,28 +225,11 @@ By completing this exercise, you will learn:
 
 This code contains intentional security vulnerabilities for educational purposes only.
 
-## Working with Different Languages
+## Other Languages
 
-This repository contains three complete DevSecOps practice environments:
+This repository also includes **.NET/C#** and **Node.js/JavaScript** versions with the same vulnerability categories.
 
-### Python (Root Directory)
-- Flask web application
-- See root README.md for details
-- Run: `python app.py`
-
-### .NET/C# (`/dotnet`)
-- ASP.NET Core Web API
-- See `dotnet/README.md` for details
-- Run: `cd dotnet && dotnet run`
-
-### Node.js/JavaScript (`/nodejs`)
-- Express.js application
-- See `nodejs/README.md` for details
-- Run: `cd nodejs && npm start`
-
-### Language-Specific Vulnerabilities
-
-Each version contains the same vulnerability categories adapted to the technology stack. Choose the language you want to practice with!
+See the [main README](../README.md) for all languages.
 
 ## License
 

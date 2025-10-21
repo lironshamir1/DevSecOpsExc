@@ -1,4 +1,4 @@
-name: DevSecOps Security Scan
+name: Python DevSecOps Security Scan
 
 on:
   push:
@@ -29,12 +29,14 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd python
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov
 
       - name: Run Tests with Coverage
         run: |
+          cd python
           pytest tests/ --cov=. --cov-report=xml --cov-report=html --cov-report=term || echo "Tests need to be implemented"
 
       - name: SonarQube Scan
@@ -55,7 +57,7 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: htmlcov/
+          path: python/htmlcov/
 
       - name: Security Gate Check
         run: |
@@ -77,7 +79,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t vulnerable-app:${{ github.sha }} .
+          docker build -t vulnerable-python-app:${{ github.sha }} python/
 
       - name: Prisma Cloud Image Scan
         env:
@@ -95,7 +97,7 @@ jobs:
             --address $PRISMA_API_URL \
             --user $PRISMA_ACCESS_KEY \
             --password $PRISMA_SECRET_KEY \
-            vulnerable-app:${{ github.sha }} || echo "Vulnerabilities found in image"
+            vulnerable-python-app:${{ github.sha }} || echo "Vulnerabilities found in image"
 
       - name: Prisma Cloud IaC Scan
         env:
@@ -108,7 +110,7 @@ jobs:
             --user $PRISMA_ACCESS_KEY \
             --password $PRISMA_SECRET_KEY \
             --output-file prisma-iac-report.json \
-            . || echo "IaC issues found"
+            python/ || echo "IaC issues found"
 
       - name: Upload Prisma Cloud Reports
         uses: actions/upload-artifact@v3
