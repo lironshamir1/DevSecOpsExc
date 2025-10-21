@@ -1,0 +1,65 @@
+# VULNERABLE Docker Compose - DO NOT USE IN PRODUCTION
+# This file contains intentional security misconfigurations
+
+version: '3.8'
+
+services:
+  # Vulnerable web application
+  web:
+    build: .
+    container_name: vulnerable-app
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=hardcoded-secret-key-12345
+      - DB_PASSWORD=password123
+      - API_KEY=sk-1234567890abcdef
+      - DEBUG=True
+      - FLASK_ENV=development
+    volumes:
+      - /etc:/host-etc:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app
+    privileged: true
+    depends_on:
+      - db
+      - redis
+
+  # Vulnerable database
+  db:
+    image: postgres:10
+    container_name: vulnerable-db
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+
+  # Vulnerable Redis
+  redis:
+    image: redis:latest
+    container_name: vulnerable-redis
+    ports:
+      - "6379:6379"
+    command: redis-server
+
+  # Vulnerable admin interface
+  adminer:
+    image: adminer
+    container_name: vulnerable-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+
+
+# Additional issues:
+# - No logging configuration
+# - No restart policies
+# - No dependency health checks
+# - Services running as root
+# - Unnecessary port exposures
+# - No TLS/SSL configuration

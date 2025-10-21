@@ -1,0 +1,165 @@
+---
+# OpenShift BuildConfig for the application
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: vulnerable-app
+  labels:
+    app: vulnerable-app
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: vulnerable-app:latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/your-org/DevSecOpsExc.git
+      ref: main
+    contextDir: /
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      # Build arguments (avoid secrets here!)
+      buildArgs:
+        - name: BUILD_DATE
+          value: "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  triggers:
+  - type: ConfigChange
+  - type: ImageChange
+  - type: GitHub
+    github:
+      secret: "${GITHUB_WEBHOOK_SECRET}"
+  - type: Generic
+    generic:
+      secret: "${GENERIC_WEBHOOK_SECRET}"
+  runPolicy: Serial
+
+---
+# ImageStream for the application
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: vulnerable-app
+  labels:
+    app: vulnerable-app
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+  - name: latest
+    from:
+      kind: DockerImage
+      name: vulnerable-app:latest
+    importPolicy:
+      scheduled: true
+    referencePolicy:
+      type: Source
+
+---
+# BuildConfig with Source-to-Image (S2I) Strategy
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: vulnerable-app-s2i
+  labels:
+    app: vulnerable-app
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: vulnerable-app:s2i-latest
+  source:
+    type: Git
+    git:
+      uri: https://github.com/your-org/DevSecOpsExc.git
+      ref: main
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: python:3.9-ubi8
+      env:
+      - name: PIP_INDEX_URL
+        value: "https://pypi.org/simple"
+      - name: UPGRADE_PIP_TO_LATEST
+        value: "true"
+  triggers:
+  - type: ConfigChange
+  - type: ImageChange
+  runPolicy: Serial
+
+---
+# Template for creating all resources
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: vulnerable-app-template
+  annotations:
+    description: "DevSecOps Training - Vulnerable Application"
+    tags: "python,flask,devsecops,training"
+    iconClass: "icon-python"
+parameters:
+- name: APP_NAME
+  displayName: "Application Name"
+  description: "The name of the application"
+  value: "vulnerable-app"
+  required: true
+- name: GIT_URI
+  displayName: "Git Repository URL"
+  description: "The URL of the Git repository"
+  value: "https://github.com/your-org/DevSecOpsExc.git"
+  required: true
+- name: GIT_REF
+  displayName: "Git Reference"
+  description: "Git branch/tag reference"
+  value: "main"
+  required: true
+- name: GITHUB_WEBHOOK_SECRET
+  displayName: "GitHub Webhook Secret"
+  description: "Secret for GitHub webhook"
+  generate: expression
+  from: "[a-zA-Z0-9]{40}"
+- name: GENERIC_WEBHOOK_SECRET
+  displayName: "Generic Webhook Secret"
+  description: "Secret for generic webhook"
+  generate: expression
+  from: "[a-zA-Z0-9]{40}"
+objects:
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${APP_NAME}
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APP_NAME}
+    labels:
+      app: ${APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APP_NAME}:latest
+    source:
+      type: Git
+      git:
+        uri: ${GIT_URI}
+        ref: ${GIT_REF}
+    strategy:
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+    triggers:
+    - type: ConfigChange
+    - type: GitHub
+      github:
+        secret: ${GITHUB_WEBHOOK_SECRET}
+    - type: Generic
+      generic:
+        secret: ${GENERIC_WEBHOOK_SECRET}
