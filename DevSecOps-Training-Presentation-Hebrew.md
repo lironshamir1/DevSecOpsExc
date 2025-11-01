@@ -176,7 +176,149 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 10: Vulnerable Dependencies - דוגמה
+## שקף 10: Broken Access Control - דוגמה
+
+**מה זה?**
+משתמשים יכולים לגשת למשאבים או לבצע פעולות שאינם מורשים לבצע
+
+**קוד פגיע:**
+```python
+@app.route('/admin/user/<user_id>')
+def get_user_details(user_id):
+    # אין בדיקת הרשאות!
+    user = db.query(f"SELECT * FROM users WHERE id = {user_id}")
+    return jsonify(user)
+```
+
+**התקפה:**
+```
+משתמש עם תפקיד "guest" ניגש ל: /admin/user/1
+→ מקבל פרטי משתמש admin! 🚨
+```
+
+**קוד מאובטח:**
+```python
+@app.route('/admin/user/<user_id>')
+@require_role('admin')  # Decorator לבדיקת הרשאות
+def get_user_details(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = db.query("SELECT * FROM users WHERE id = ?", (user_id,))
+    return jsonify(user)
+```
+→ בדיקות הרשאות נאותות ✅
+
+---
+
+## שקף 11: Cryptographic Failures - דוגמה
+
+**מה זה?**
+שימוש באלגוריתמים קריפטוגרפיים חלשים או שבורים
+
+**קוד פגיע:**
+```python
+import hashlib
+from Crypto.Cipher import DES
+
+# hashing חלש
+password_hash = hashlib.md5(password.encode()).hexdigest()
+
+# הצפנה חלשה
+cipher = DES.new(b'8bytekey', DES.MODE_ECB)
+encrypted = cipher.encrypt(data)
+```
+→ MD5 שבור, DES מיושן! 🚨
+
+**קוד מאובטח:**
+```python
+import bcrypt
+from cryptography.fernet import Fernet
+
+# hashing חזק לסיסמאות
+password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+# הצפנה חזקה (AES-256)
+key = Fernet.generate_key()
+cipher = Fernet(key)
+encrypted = cipher.encrypt(data.encode())
+```
+→ אלגוריתמים סטנדרטיים בתעשייה ✅
+
+---
+
+## שקף 12: Insecure Design - דוגמה
+
+**מה זה?**
+בקרות אבטחה חסרות או לא יעילות בעיצוב האפליקציה
+
+**עיצוב פגיע:**
+```python
+# איפוס סיסמה ללא הגבלת קצב
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.json['email']
+    token = generate_token()  # קוד בן 6 ספרות
+    send_email(email, token)
+    return jsonify({"message": "Reset code sent"})
+```
+→ תוקף יכול לנסות brute-force על 6 ספרות! 🚨
+
+**עיצוב מאובטח:**
+```python
+from flask_limiter import Limiter
+
+limiter = Limiter(app, key_func=get_remote_address)
+
+@app.route('/reset-password', methods=['POST'])
+@limiter.limit("3 per hour")  # הגבלת קצב
+def reset_password():
+    email = request.json['email']
+    token = secrets.token_urlsafe(32)  # קריפטוגרפית מאובטח
+    store_token_with_expiry(email, token, expires_in=15*60)  # 15 דקות
+    send_email(email, token)
+    return jsonify({"message": "Reset link sent"})
+```
+→ הגבלת קצב + טוקנים חזקים + תפוגה ✅
+
+---
+
+## שקף 13: Security Misconfiguration - דוגמה
+
+**מה זה?**
+הגדרות ברירת מחדל לא מאובטחות, הגדרות חלקיות, או מידע debug חשוף
+
+**הגדרה פגיעה:**
+```python
+# אפליקציית Flask בייצור
+app = Flask(__name__)
+app.config['DEBUG'] = True  # 🚨 מצב debug בייצור!
+app.config['SECRET_KEY'] = 'dev'  # 🚨 סוד חלש
+
+# Dockerfile
+FROM python:3.8
+EXPOSE 5000
+ENV FLASK_ENV=development  # 🚨
+RUN chmod 777 /app  # 🚨 כתיבה לכולם
+```
+
+**הגדרה מאובטחת:**
+```python
+# אפליקציית Flask בייצור
+app = Flask(__name__)
+app.config['DEBUG'] = False  # ✅
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')  # ✅
+
+# Dockerfile
+FROM python:3.11-slim
+EXPOSE 5000
+ENV FLASK_ENV=production  # ✅
+USER 1001  # ✅ משתמש לא-root
+RUN chmod 755 /app  # ✅ הרשאות נכונות
+```
+
+---
+
+## שקף 14: Vulnerable Dependencies - דוגמה
 
 **מה זה?**
 שימוש בספריות עם פרצות אבטחה ידועות
@@ -204,7 +346,199 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 11: סקירת כלי אבטחה
+## שקף 15: Authentication Failures - דוגמה
+
+**מה זה?**
+מנגנוני אימות שבורים המאפשרים גישה לא מורשית
+
+**קוד פגיע:**
+```python
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.json['username']
+    password = request.json['password']
+
+    # אין הגבלת קצב, אין נעילת חשבון
+    user = db.query(f"SELECT * FROM users WHERE username='{username}'")
+    if user and user['password'] == password:  # 🚨 טקסט פשוט!
+        session['user_id'] = user['id']
+        return jsonify({"success": True})
+```
+→ אפשר brute-force, סיסמאות בטקסט פשוט! 🚨
+
+**קוד מאובטח:**
+```python
+from flask_limiter import Limiter
+import bcrypt
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")  # הגבלת קצב
+def login():
+    username = request.json['username']
+    password = request.json['password']
+
+    user = db.query("SELECT * FROM users WHERE username=?", (username,))
+    if user and bcrypt.checkpw(password.encode(), user['password_hash']):
+        session.permanent = False  # timeout של session
+        session['user_id'] = user['id']
+        log_login_attempt(username, success=True)
+        return jsonify({"success": True})
+
+    log_login_attempt(username, success=False)
+    return jsonify({"error": "Invalid credentials"}), 401
+```
+→ הגבלת קצב + סיסמאות מוצפנות + לוגים ✅
+
+---
+
+## שקף 16: Data Integrity Failures - דוגמה
+
+**מה זה?**
+deserialization לא מאובטח המוביל להרצת קוד
+
+**קוד פגיע:**
+```python
+import pickle
+import yaml
+
+# Pickle deserialization - RCE!
+@app.route('/load-object', methods=['POST'])
+def load_object():
+    data = request.data
+    obj = pickle.loads(data)  # 🚨 תוקף יכול להריץ קוד!
+    return jsonify(obj)
+
+# YAML deserialization
+config = yaml.load(user_input)  # 🚨 לא בטוח
+```
+
+**התקפה:**
+```python
+# תוקף יוצר pickle זדוני
+import pickle, os
+class Exploit:
+    def __reduce__(self):
+        return (os.system, ('rm -rf /',))
+payload = pickle.dumps(Exploit())
+```
+
+**קוד מאובטח:**
+```python
+import json
+
+@app.route('/load-object', methods=['POST'])
+def load_object():
+    data = request.data
+    obj = json.loads(data)  # ✅ סריאליזציה בטוחה
+    # אימות schema
+    if not validate_schema(obj):
+        abort(400)
+    return jsonify(obj)
+
+# טעינת YAML בטוחה
+config = yaml.safe_load(user_input)  # ✅
+```
+
+---
+
+## שקף 17: Logging & Monitoring Failures - דוגמה
+
+**מה זה?**
+לוגים לא מספיקים מונעים זיהוי של אירועי אבטחה
+
+**קוד פגיע:**
+```python
+@app.route('/admin/delete-user/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    # אין לוגים!
+    db.execute(f"DELETE FROM users WHERE id = {user_id}")
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def login():
+    # ניסיונות כושלים לא נרשמים בלוג
+    if not authenticate(username, password):
+        return jsonify({"error": "Invalid"}), 401
+```
+→ אין audit trail, התקפות לא מזוהות! 🚨
+
+**קוד מאובטח:**
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+@app.route('/admin/delete-user/<user_id>', methods=['DELETE'])
+@require_role('admin')
+def delete_user(user_id):
+    logger.warning(f"ניסיון מחיקת משתמש על ידי {current_user.id} למשתמש {user_id}")
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    logger.info(f"משתמש {user_id} נמחק על ידי {current_user.id}")
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def login():
+    if not authenticate(username, password):
+        logger.warning(f"ניסיון כניסה נכשל למשתמש {username} מ-{request.remote_addr}")
+        return jsonify({"error": "Invalid"}), 401
+    logger.info(f"כניסה מוצלחת למשתמש {username}")
+```
+→ audit trail מלא ✅
+
+---
+
+## שקף 18: Server-Side Request Forgery (SSRF) - דוגמה
+
+**מה זה?**
+תוקף מאלץ את השרת לבצע בקשות למיקומים לא מיועדים
+
+**קוד פגיע:**
+```python
+import requests
+
+@app.route('/fetch-url', methods=['POST'])
+def fetch_url():
+    url = request.json['url']
+    # אין ולידציה!
+    response = requests.get(url)  # 🚨
+    return response.text
+```
+
+**התקפה:**
+```
+POST /fetch-url
+{"url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/"}
+→ גישה ל-metadata של AWS וגניבת credentials! 🚨
+```
+
+**קוד מאובטח:**
+```python
+import requests
+from urllib.parse import urlparse
+
+ALLOWED_DOMAINS = ['api.example.com', 'cdn.example.com']
+
+@app.route('/fetch-url', methods=['POST'])
+def fetch_url():
+    url = request.json['url']
+
+    # אימות URL
+    parsed = urlparse(url)
+    if parsed.scheme not in ['http', 'https']:
+        abort(400, "פרוטוקול לא תקין")
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        abort(400, "דומיין לא מורשה")
+    if parsed.hostname in ['localhost', '127.0.0.1', '169.254.169.254']:
+        abort(400, "IPs פנימיים חסומים")
+
+    response = requests.get(url, timeout=5)
+    return response.text
+```
+→ אימות whitelist + חסימת IPs פנימיים ✅
+
+---
+
+## שקף 19: סקירת כלי אבטחה
 
 ### **1. SonarQube**
 **Static Application Security Testing (SAST)**
@@ -223,7 +557,7 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 12: סקירת כלי אבטחה (המשך)
+## שקף 20: סקירת כלי אבטחה (המשך)
 
 ### **2. Prisma Cloud (Twistlock)**
 **אבטחת Container ותשתית**
@@ -242,7 +576,7 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 13: תהליך העבודה DevSecOps
+## שקף 21: תהליך העבודה DevSecOps
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -278,7 +612,7 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 14: הריפו שלכם לתרגול
+## שקף 22: הריפו שלכם לתרגול
 
 **שלוש גרסאות שפות:**
 - **Python** - אפליקציית Flask
@@ -299,7 +633,7 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## שקף 15: מבנה הריפו
+## שקף 23: מבנה הריפו
 
 ```
 DevSecOpsExc/
@@ -321,7 +655,7 @@ DevSecOpsExc/
 
 ---
 
-## שקף 16: תהליך התרגיל - צעד אחר צעד
+## שקף 24: תהליך התרגיל - צעד אחר צעד
 
 **שלב 1: בחרו שפה**
 ```bash
@@ -343,7 +677,7 @@ npm install && npm start
 
 ---
 
-## שקף 17: תהליך התרגיל (המשך)
+## שקף 25: תהליך התרגיל (המשך)
 
 **שלב 3: הפעילו את ה-CI/CD Pipeline**
 ```bash
@@ -363,7 +697,7 @@ git push
 
 ---
 
-## שקף 18: תהליך התרגיל (המשך)
+## שקף 26: תהליך התרגיל (המשך)
 
 **שלב 5: נתחו פרצות**
 
@@ -380,7 +714,7 @@ git push
 
 ---
 
-## שקף 19: תהליך התרגיל (המשך)
+## שקף 27: תהליך התרגיל (המשך)
 
 **שלב 7: אמתו תיקונים**
 ```bash
@@ -396,7 +730,7 @@ git push
 
 ---
 
-## שקף 20: דוגמה - תיקון SQL Injection
+## שקף 28: דוגמה - תיקון SQL Injection
 
 **1. דוח SonarQube אומר:**
 ```
@@ -419,7 +753,7 @@ def get_user(username):
 
 ---
 
-## שקף 21: דוגמה - תיקון SQL Injection (המשך)
+## שקף 29: דוגמה - תיקון SQL Injection (המשך)
 
 **4. החילו את התיקון:**
 ```python
@@ -446,7 +780,7 @@ git push
 
 ---
 
-## שקף 22: טיפים להצלחה
+## שקף 30: טיפים להצלחה
 
 **1. קראו את הודעות השגיאה**
 - כלי האבטחה נותנים הסברים מפורטים
@@ -467,7 +801,7 @@ git push
 
 ---
 
-## שקף 23: טעויות נפוצות להימנע מהן
+## שקף 31: טעויות נפוצות להימנע מהן
 
 ❌ **אל תעשו:**
 - למחוק קוד פגיע בלי להחליף אותו
@@ -485,7 +819,7 @@ git push
 
 ---
 
-## שקף 24: פריסה ל-OpenShift
+## שקף 32: פריסה ל-OpenShift
 
 **מה זה OpenShift?**
 - פלטפורמת Kubernetes ארגונית של Red Hat
@@ -507,7 +841,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 25: אינטגרציה עם HashiCorp Vault
+## שקף 33: אינטגרציה עם HashiCorp Vault
 
 **מה זה Vault?**
 - פלטפורמה לניהול סודות
@@ -528,7 +862,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 26: Best Practices אבטחה
+## שקף 34: Best Practices אבטחה
 
 **ולידציה של קלט**
 - לאמת כל קלט משתמש
@@ -552,7 +886,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 27: אבטחה בייצור
+## שקף 35: אבטחה בייצור
 
 **Defense in Depth**
 שכבות מרובות של אבטחה:
@@ -575,7 +909,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 28: מדידת הצלחה
+## שקף 36: מדידת הצלחה
 
 **מדדי מפתח:**
 
@@ -597,7 +931,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 29: משאבי למידה
+## שקף 37: משאבי למידה
 
 **תיעוד:**
 - OWASP Top 10: https://owasp.org/www-project-top-ten/
@@ -617,7 +951,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 30: מטרות התרגיל
+## שקף 38: מטרות התרגיל
 
 בסוף התרגיל תדעו:
 
@@ -633,7 +967,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 31: קבלת עזרה
+## שקף 39: קבלת עזרה
 
 **במהלך התרגיל:**
 
@@ -649,7 +983,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 32: בואו נתחיל!
+## שקף 40: בואו נתחיל!
 
 **רשימת בדיקה לפני התרגיל:**
 
@@ -668,7 +1002,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## שקף 33: שאלות ותשובות
+## שקף 41: שאלות ותשובות
 
 **שאלות?**
 

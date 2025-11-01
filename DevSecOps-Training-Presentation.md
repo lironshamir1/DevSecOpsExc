@@ -176,7 +176,149 @@ API_KEY = vault.get_secret('app/api_key')
 
 ---
 
-## Slide 10: Vulnerable Dependencies - Example
+## Slide 10: Broken Access Control - Example
+
+**What is it?**
+Users can access resources or perform actions they shouldn't be allowed to
+
+**Vulnerable Code:**
+```python
+@app.route('/admin/user/<user_id>')
+def get_user_details(user_id):
+    # No authorization check!
+    user = db.query(f"SELECT * FROM users WHERE id = {user_id}")
+    return jsonify(user)
+```
+
+**Attack:**
+```
+User with role "guest" accesses: /admin/user/1
+→ Gets admin user details! 🚨
+```
+
+**Secure Code:**
+```python
+@app.route('/admin/user/<user_id>')
+@require_role('admin')  # Authorization decorator
+def get_user_details(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    user = db.query("SELECT * FROM users WHERE id = ?", (user_id,))
+    return jsonify(user)
+```
+→ Proper authorization checks ✅
+
+---
+
+## Slide 11: Cryptographic Failures - Example
+
+**What is it?**
+Using weak or broken cryptographic algorithms
+
+**Vulnerable Code:**
+```python
+import hashlib
+from Crypto.Cipher import DES
+
+# Weak hashing
+password_hash = hashlib.md5(password.encode()).hexdigest()
+
+# Weak encryption
+cipher = DES.new(b'8bytekey', DES.MODE_ECB)
+encrypted = cipher.encrypt(data)
+```
+→ MD5 is broken, DES is obsolete! 🚨
+
+**Secure Code:**
+```python
+import bcrypt
+from cryptography.fernet import Fernet
+
+# Strong password hashing
+password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+# Strong encryption (AES-256)
+key = Fernet.generate_key()
+cipher = Fernet(key)
+encrypted = cipher.encrypt(data.encode())
+```
+→ Industry-standard algorithms ✅
+
+---
+
+## Slide 12: Insecure Design - Example
+
+**What is it?**
+Missing or ineffective security controls in the application design
+
+**Vulnerable Design:**
+```python
+# Password reset without rate limiting
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.json['email']
+    token = generate_token()  # 6-digit numeric code
+    send_email(email, token)
+    return jsonify({"message": "Reset code sent"})
+```
+→ Attacker can brute-force 6-digit codes! 🚨
+
+**Secure Design:**
+```python
+from flask_limiter import Limiter
+
+limiter = Limiter(app, key_func=get_remote_address)
+
+@app.route('/reset-password', methods=['POST'])
+@limiter.limit("3 per hour")  # Rate limiting
+def reset_password():
+    email = request.json['email']
+    token = secrets.token_urlsafe(32)  # Cryptographically secure
+    store_token_with_expiry(email, token, expires_in=15*60)  # 15 min
+    send_email(email, token)
+    return jsonify({"message": "Reset link sent"})
+```
+→ Rate limiting + strong tokens + expiration ✅
+
+---
+
+## Slide 13: Security Misconfiguration - Example
+
+**What is it?**
+Insecure default configurations, incomplete setups, or exposed debug info
+
+**Vulnerable Configuration:**
+```python
+# Flask app in production
+app = Flask(__name__)
+app.config['DEBUG'] = True  # 🚨 Debug mode in production!
+app.config['SECRET_KEY'] = 'dev'  # 🚨 Weak secret
+
+# Dockerfile
+FROM python:3.8
+EXPOSE 5000
+ENV FLASK_ENV=development  # 🚨
+RUN chmod 777 /app  # 🚨 World-writable
+```
+
+**Secure Configuration:**
+```python
+# Flask app in production
+app = Flask(__name__)
+app.config['DEBUG'] = False  # ✅
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')  # ✅
+
+# Dockerfile
+FROM python:3.11-slim
+EXPOSE 5000
+ENV FLASK_ENV=production  # ✅
+USER 1001  # ✅ Non-root user
+RUN chmod 755 /app  # ✅ Proper permissions
+```
+
+---
+
+## Slide 14: Vulnerable Dependencies - Example
 
 **What is it?**
 Using libraries with known security vulnerabilities
@@ -204,7 +346,199 @@ Using libraries with known security vulnerabilities
 
 ---
 
-## Slide 11: Security Tools Overview
+## Slide 15: Authentication Failures - Example
+
+**What is it?**
+Broken authentication mechanisms allowing unauthorized access
+
+**Vulnerable Code:**
+```python
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.json['username']
+    password = request.json['password']
+
+    # No rate limiting, no account lockout
+    user = db.query(f"SELECT * FROM users WHERE username='{username}'")
+    if user and user['password'] == password:  # 🚨 Plain text!
+        session['user_id'] = user['id']
+        return jsonify({"success": True})
+```
+→ Brute-force possible, passwords in plain text! 🚨
+
+**Secure Code:**
+```python
+from flask_limiter import Limiter
+import bcrypt
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")  # Rate limiting
+def login():
+    username = request.json['username']
+    password = request.json['password']
+
+    user = db.query("SELECT * FROM users WHERE username=?", (username,))
+    if user and bcrypt.checkpw(password.encode(), user['password_hash']):
+        session.permanent = False  # Session timeout
+        session['user_id'] = user['id']
+        log_login_attempt(username, success=True)
+        return jsonify({"success": True})
+
+    log_login_attempt(username, success=False)
+    return jsonify({"error": "Invalid credentials"}), 401
+```
+→ Rate limiting + hashed passwords + logging ✅
+
+---
+
+## Slide 16: Data Integrity Failures - Example
+
+**What is it?**
+Insecure deserialization leading to code execution
+
+**Vulnerable Code:**
+```python
+import pickle
+import yaml
+
+# Pickle deserialization - RCE!
+@app.route('/load-object', methods=['POST'])
+def load_object():
+    data = request.data
+    obj = pickle.loads(data)  # 🚨 Attacker can execute code!
+    return jsonify(obj)
+
+# YAML deserialization
+config = yaml.load(user_input)  # 🚨 Unsafe
+```
+
+**Attack:**
+```python
+# Attacker crafts malicious pickle
+import pickle, os
+class Exploit:
+    def __reduce__(self):
+        return (os.system, ('rm -rf /',))
+payload = pickle.dumps(Exploit())
+```
+
+**Secure Code:**
+```python
+import json
+
+@app.route('/load-object', methods=['POST'])
+def load_object():
+    data = request.data
+    obj = json.loads(data)  # ✅ Safe serialization
+    # Validate schema
+    if not validate_schema(obj):
+        abort(400)
+    return jsonify(obj)
+
+# Safe YAML loading
+config = yaml.safe_load(user_input)  # ✅
+```
+
+---
+
+## Slide 17: Logging & Monitoring Failures - Example
+
+**What is it?**
+Insufficient logging prevents detection of security incidents
+
+**Vulnerable Code:**
+```python
+@app.route('/admin/delete-user/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    # No logging!
+    db.execute(f"DELETE FROM users WHERE id = {user_id}")
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def login():
+    # Failed logins not logged
+    if not authenticate(username, password):
+        return jsonify({"error": "Invalid"}), 401
+```
+→ No audit trail, attacks go undetected! 🚨
+
+**Secure Code:**
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+@app.route('/admin/delete-user/<user_id>', methods=['DELETE'])
+@require_role('admin')
+def delete_user(user_id):
+    logger.warning(f"User deletion attempt by {current_user.id} for user {user_id}")
+    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    logger.info(f"User {user_id} deleted by {current_user.id}")
+    return jsonify({"success": True})
+
+@app.route('/login', methods=['POST'])
+def login():
+    if not authenticate(username, password):
+        logger.warning(f"Failed login attempt for user {username} from {request.remote_addr}")
+        return jsonify({"error": "Invalid"}), 401
+    logger.info(f"Successful login for user {username}")
+```
+→ Complete audit trail ✅
+
+---
+
+## Slide 18: Server-Side Request Forgery (SSRF) - Example
+
+**What is it?**
+Attacker forces server to make requests to unintended locations
+
+**Vulnerable Code:**
+```python
+import requests
+
+@app.route('/fetch-url', methods=['POST'])
+def fetch_url():
+    url = request.json['url']
+    # No validation!
+    response = requests.get(url)  # 🚨
+    return response.text
+```
+
+**Attack:**
+```
+POST /fetch-url
+{"url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/"}
+→ Access AWS metadata and steal credentials! 🚨
+```
+
+**Secure Code:**
+```python
+import requests
+from urllib.parse import urlparse
+
+ALLOWED_DOMAINS = ['api.example.com', 'cdn.example.com']
+
+@app.route('/fetch-url', methods=['POST'])
+def fetch_url():
+    url = request.json['url']
+
+    # Validate URL
+    parsed = urlparse(url)
+    if parsed.scheme not in ['http', 'https']:
+        abort(400, "Invalid protocol")
+    if parsed.hostname not in ALLOWED_DOMAINS:
+        abort(400, "Domain not allowed")
+    if parsed.hostname in ['localhost', '127.0.0.1', '169.254.169.254']:
+        abort(400, "Internal IPs blocked")
+
+    response = requests.get(url, timeout=5)
+    return response.text
+```
+→ Whitelist validation + block internal IPs ✅
+
+---
+
+## Slide 19: Security Tools Overview
 
 ### **1. SonarQube**
 **Static Application Security Testing (SAST)**
@@ -223,7 +557,7 @@ Finds:
 
 ---
 
-## Slide 12: Security Tools Overview (continued)
+## Slide 20: Security Tools Overview (continued)
 
 ### **2. Prisma Cloud (Twistlock)**
 **Container & Infrastructure Security**
@@ -242,7 +576,7 @@ Finds:
 
 ---
 
-## Slide 13: The DevSecOps Workflow
+## Slide 21: The DevSecOps Workflow
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -278,7 +612,7 @@ Finds:
 
 ---
 
-## Slide 14: Your Practice Repository
+## Slide 22: Your Practice Repository
 
 **Three Language Versions:**
 - **Python** - Flask application
@@ -299,7 +633,7 @@ Finds:
 
 ---
 
-## Slide 15: Repository Structure
+## Slide 23: Repository Structure
 
 ```
 DevSecOpsExc/
@@ -321,7 +655,7 @@ DevSecOpsExc/
 
 ---
 
-## Slide 16: Exercise Workflow - Step by Step
+## Slide 24: Exercise Workflow - Step by Step
 
 **Step 1: Choose Your Language**
 ```bash
@@ -343,7 +677,7 @@ npm install && npm start
 
 ---
 
-## Slide 17: Exercise Workflow (continued)
+## Slide 25: Exercise Workflow (continued)
 
 **Step 3: Trigger CI/CD Pipeline**
 ```bash
@@ -363,7 +697,7 @@ git push
 
 ---
 
-## Slide 18: Exercise Workflow (continued)
+## Slide 26: Exercise Workflow (continued)
 
 **Step 5: Analyze Vulnerabilities**
 
@@ -380,7 +714,7 @@ Open reports and identify:
 
 ---
 
-## Slide 19: Exercise Workflow (continued)
+## Slide 27: Exercise Workflow (continued)
 
 **Step 7: Verify Fixes**
 ```bash
@@ -396,7 +730,7 @@ git push
 
 ---
 
-## Slide 20: Example - Fixing SQL Injection
+## Slide 28: Example - Fixing SQL Injection
 
 **1. SonarQube Report Says:**
 ```
@@ -419,7 +753,7 @@ def get_user(username):
 
 ---
 
-## Slide 21: Example - Fixing SQL Injection (continued)
+## Slide 29: Example - Fixing SQL Injection (continued)
 
 **4. Apply the Fix:**
 ```python
@@ -446,7 +780,7 @@ git push
 
 ---
 
-## Slide 22: Tips for Success
+## Slide 30: Tips for Success
 
 **1. Read the Error Messages**
 - Security tools give detailed explanations
@@ -467,7 +801,7 @@ git push
 
 ---
 
-## Slide 23: Common Mistakes to Avoid
+## Slide 31: Common Mistakes to Avoid
 
 ❌ **Don't:**
 - Delete vulnerable code without replacing it
@@ -485,7 +819,7 @@ git push
 
 ---
 
-## Slide 24: OpenShift Deployment
+## Slide 32: OpenShift Deployment
 
 **What is OpenShift?**
 - Enterprise Kubernetes platform by Red Hat
@@ -507,7 +841,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## Slide 25: HashiCorp Vault Integration
+## Slide 33: HashiCorp Vault Integration
 
 **What is Vault?**
 - Secrets management platform
@@ -528,7 +862,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## Slide 26: Security Best Practices
+## Slide 34: Security Best Practices
 
 **Input Validation**
 - Validate all user input
@@ -552,7 +886,7 @@ oc apply -f openshift/deployment-config.yml
 
 ---
 
-## Slide 27: Security in Production
+## Slide 35: Security in Production
 
 **Defense in Depth**
 Multiple layers of security:
@@ -575,7 +909,7 @@ Multiple layers of security:
 
 ---
 
-## Slide 28: Measuring Success
+## Slide 36: Measuring Success
 
 **Key Metrics:**
 
@@ -597,7 +931,7 @@ Multiple layers of security:
 
 ---
 
-## Slide 29: Learning Resources
+## Slide 37: Learning Resources
 
 **Documentation:**
 - OWASP Top 10: https://owasp.org/www-project-top-ten/
@@ -617,7 +951,7 @@ Multiple layers of security:
 
 ---
 
-## Slide 30: Exercise Goals
+## Slide 38: Exercise Goals
 
 By the end of this exercise, you will:
 
@@ -633,7 +967,7 @@ By the end of this exercise, you will:
 
 ---
 
-## Slide 31: Getting Help
+## Slide 39: Getting Help
 
 **During the Exercise:**
 
@@ -649,7 +983,7 @@ By the end of this exercise, you will:
 
 ---
 
-## Slide 32: Let's Get Started!
+## Slide 40: Let's Get Started!
 
 **Pre-Exercise Checklist:**
 
@@ -668,13 +1002,13 @@ By the end of this exercise, you will:
 
 ---
 
-## Slide 33: Q&A
+## Slide 41: Q&A
 
 **Questions?**
 
 ---
 
-## Slide 34: Additional Slides - Python Specific Vulnerabilities
+## Slide 42: Additional Slides - Python Specific Vulnerabilities
 
 **Python-Specific Issues:**
 
@@ -700,7 +1034,7 @@ By the end of this exercise, you will:
 
 ---
 
-## Slide 35: Additional Slides - .NET Specific Vulnerabilities
+## Slide 43: Additional Slides - .NET Specific Vulnerabilities
 
 **.NET-Specific Issues:**
 
@@ -731,7 +1065,7 @@ By the end of this exercise, you will:
 
 ---
 
-## Slide 36: Additional Slides - Node.js Specific Vulnerabilities
+## Slide 44: Additional Slides - Node.js Specific Vulnerabilities
 
 **Node.js-Specific Issues:**
 
