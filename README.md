@@ -112,7 +112,7 @@ Each language version contains **the same vulnerability categories** adapted to 
 | **Framework** | Flask | ASP.NET Core 6.0 | Express.js 4.x |
 | **Runtime** | Python 3.9 | .NET 6.0 | Node.js 18.x |
 | **Database** | SQLite/PostgreSQL | SQL Server | MySQL/MongoDB |
-| **Secrets** | HashiCorp Vault | HashiCorp Vault | HashiCorp Vault |
+| **Secrets** | Environment Variables | Environment Variables | Environment Variables |
 | **Deployment** | OpenShift | OpenShift | OpenShift |
 
 ## 🔍 Security Tools Integration
@@ -225,7 +225,6 @@ This code contains **intentional security vulnerabilities** for educational purp
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OpenShift Documentation](https://docs.openshift.com/)
-- [HashiCorp Vault](https://www.vaultproject.io/docs)
 - [SonarQube](https://docs.sonarqube.org/)
 - [Prisma Cloud](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
 

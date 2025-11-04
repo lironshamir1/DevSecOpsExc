@@ -12,7 +12,7 @@ This is a training repository that contains multiple security vulnerabilities an
 
 
 **Deployment Platform**: OpenShift (Red Hat)
-**Secret Management**: HashiCorp Vault
+**Secret Management**: Environment Variables
 
 ## The Challenge
 
@@ -108,25 +108,6 @@ oc start-build vulnerable-app
 oc logs -f dc/vulnerable-app
 ```
 
-### HashiCorp Vault Setup
-
-```bash
-# Set Vault address
-export VAULT_ADDR=https://vault.example.com:8200
-
-# Store secrets in Vault
-vault kv put secret/secure-app/config \
-  secret_key="your-secret-key" \
-  api_key="your-api-key"
-
-# Configure dynamic database credentials
-vault secrets enable database
-vault write database/config/postgresql \
-  plugin_name=postgresql-database-plugin \
-  allowed_roles="app-role" \
-  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/appdb"
-```
-
 ## CI/CD Pipeline
 
 The GitHub Actions pipeline (`.github/workflows/security-scan.yml`) includes:
@@ -168,19 +149,17 @@ See `SOLUTIONS.md` for detailed explanations and fixes for each vulnerability ca
 ```
 .
 ├── app.py                              # Vulnerable Flask application
-├── app_secure.py                       # Secure version with Vault integration
 ├── database.py                         # Database operations
 ├── crypto_utils.py                     # Cryptography utilities
 ├── file_handler.py                     # File operations
 ├── admin.py                            # Admin functions
-├── vault_integration.py                # HashiCorp Vault client
 ├── requirements.txt                    # Dependencies
 ├── Dockerfile                          # Vulnerable container image
 ├── Dockerfile.secure                   # Secure OpenShift-compatible image
 ├── docker-compose.yml                  # Local development environment
 ├── openshift/
 │   ├── deployment-config.yml           # OpenShift deployment (vulnerable)
-│   ├── deployment-config-secure.yml    # Secure deployment with Vault
+│   ├── deployment-config-secure.yml    # Secure deployment
 │   └── build-config.yml                # OpenShift build configuration
 ├── tests/
 │   └── test_app.py                     # Unit tests
@@ -200,7 +179,7 @@ By completing this exercise, you will learn:
 
 - How to identify security vulnerabilities using SonarQube and Prisma Cloud
 - How to deploy applications securely on OpenShift
-- How to integrate HashiCorp Vault for secret management
+- How to manage secrets securely using environment variables
 - How to implement secure coding practices in Python
 - How to configure CI/CD pipelines for DevSecOps
 - How to run containers as non-root users
@@ -216,7 +195,6 @@ By completing this exercise, you will learn:
 - [SonarQube Python Analysis](https://docs.sonarqube.org/latest/analysis/languages/python/)
 - [Prisma Cloud Documentation](https://docs.paloaltonetworks.com/prisma/prisma-cloud)
 - [OpenShift Documentation](https://docs.openshift.com/)
-- [HashiCorp Vault](https://www.vaultproject.io/docs)
 - [Container Security Best Practices](https://cloud.google.com/architecture/best-practices-for-building-containers)
 
 ## Warning

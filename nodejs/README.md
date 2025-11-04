@@ -8,7 +8,7 @@ Intentionally vulnerable Node.js/Express application for practicing DevSecOps se
 - **Framework**: Express.js 4.x
 - **Language**: JavaScript ES6+
 - **Deployment**: OpenShift (Red Hat)
-- **Secret Management**: HashiCorp Vault
+- **Secret Management**: Environment Variables
 - **Database**: MySQL, MongoDB
 - **Security Tools**: SonarQube and Prisma Cloud
 
@@ -190,7 +190,7 @@ After fixing vulnerabilities:
 1. Update all dependencies to latest versions
 2. Implement parameterized queries
 3. Add input validation
-4. Use Vault for secrets
+4. Use environment variables for secrets
 5. Enable security headers
 6. Implement proper error handling
 7. Add authentication and authorization

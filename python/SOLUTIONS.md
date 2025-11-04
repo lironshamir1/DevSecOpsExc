@@ -57,7 +57,7 @@ DB_PASSWORD=your-secure-password-here
 
 **Best Practices:**
 - Use environment variables for all secrets
-- Use secret management tools (AWS Secrets Manager, HashiCorp Vault, Azure Key Vault)
+- Use secret management tools (AWS Secrets Manager, Azure Key Vault, or OpenShift Secrets)
 - Never commit .env files to version control
 - Use strong, randomly generated secrets
 - Rotate secrets regularly

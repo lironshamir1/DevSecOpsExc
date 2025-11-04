@@ -7,7 +7,7 @@ Intentionally vulnerable ASP.NET Core application for practicing DevSecOps secur
 - **Framework**: ASP.NET Core 8.0
 - **Language**: C# 12
 - **Deployment**: OpenShift (Red Hat)
-- **Secret Management**: HashiCorp Vault
+- **Secret Management**: Environment Variables
 - **Database**: SQL Server
 - **Security Tools**: SonarQube and Prisma Cloud
 
@@ -36,9 +36,6 @@ dotnet --version
 
 # Install OpenShift CLI
 oc version
-
-# Access to Vault
-export VAULT_ADDR=https://vault.example.com:8200
 ```
 
 ### Running Locally
