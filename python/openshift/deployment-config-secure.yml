@@ -1,5 +1,5 @@
 ---
-# SECURE OpenShift DeploymentConfig with Vault Integration
+# SECURE OpenShift DeploymentConfig
 # This is the FIXED version for production use
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
@@ -9,7 +9,7 @@ metadata:
     app: secure-app
     tier: backend
   annotations:
-    description: "Secure application with Vault integration"
+    description: "Secure application"
 spec:
   replicas: 2
   selector:
@@ -33,16 +33,6 @@ spec:
       labels:
         app: secure-app
         deploymentconfig: secure-app
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/role: "secure-app"
-        vault.hashicorp.com/agent-inject-secret-config: "secret/data/secure-app/config"
-        vault.hashicorp.com/agent-inject-template-config: |
-          {{- with secret "secret/data/secure-app/config" -}}
-          export SECRET_KEY="{{ .Data.data.secret_key }}"
-          export DB_PASSWORD="{{ .Data.data.db_password }}"
-          export API_KEY="{{ .Data.data.api_key }}"
-          {{- end }}
     spec:
       serviceAccountName: secure-app-sa
 
@@ -55,20 +45,15 @@ spec:
           name: http
 
         env:
-        # Configuration from Vault (injected by Vault Agent)
-        - name: VAULT_ADDR
-          value: "https://vault.example.com:8200"
+        # Configuration from environment
         - name: DEBUG
           value: "False"
         - name: FLASK_ENV
           value: "production"
 
-        # Secrets are loaded from Vault-injected files
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            source /vault/secrets/config
-            python app.py
+        # Use ConfigMap or Secrets for configuration
+        command: ["python"]
+        args: ["app.py"]
 
         resources:
           requests:
@@ -235,10 +220,3 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: vault
-    ports:
-    - protocol: TCP
-      port: 8200
