@@ -4,8 +4,8 @@ Intentionally vulnerable ASP.NET Core application for practicing DevSecOps secur
 
 ## Technology Stack
 
-- **Framework**: ASP.NET Core 6.0
-- **Language**: C# 10
+- **Framework**: ASP.NET Core 8.0
+- **Language**: C# 12
 - **Deployment**: OpenShift (Red Hat)
 - **Secret Management**: HashiCorp Vault
 - **Database**: SQL Server
@@ -31,7 +31,7 @@ This application contains the following intentional security issues:
 ### Prerequisites
 
 ```bash
-# Install .NET 6 SDK
+# Install .NET 8 SDK
 dotnet --version
 
 # Install OpenShift CLI
@@ -87,7 +87,7 @@ oc new-project devsecops-dotnet
 oc apply -f openshift/deployment-config.yml
 
 # Build from source
-oc new-app dotnet:6.0~https://github.com/your-org/DevSecOpsExc \
+oc new-app dotnet:8.0~https://github.com/your-org/DevSecOpsExc \
   --context-dir=dotnet \
   --name=vulnerable-dotnet-app
 ```
