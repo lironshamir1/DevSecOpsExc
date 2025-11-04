@@ -110,7 +110,7 @@ Each language version contains **the same vulnerability categories** adapted to 
 | Component | Python | .NET | Node.js |
 |-----------|--------|------|---------|
 | **Framework** | Flask | ASP.NET Core 6.0 | Express.js 4.x |
-| **Runtime** | Python 3.9 | .NET 6.0 | Node.js 14.x |
+| **Runtime** | Python 3.9 | .NET 6.0 | Node.js 18.x |
 | **Database** | SQLite/PostgreSQL | SQL Server | MySQL/MongoDB |
 | **Secrets** | HashiCorp Vault | HashiCorp Vault | HashiCorp Vault |
 | **Deployment** | OpenShift | OpenShift | OpenShift |
@@ -141,7 +141,7 @@ oc apply -f python/openshift/deployment-config.yml
 oc new-app dotnet:6.0~. --context-dir=dotnet --name=vulnerable-dotnet-app
 
 # Node.js
-oc new-app nodejs:14~. --context-dir=nodejs --name=vulnerable-nodejs-app
+oc new-app nodejs:18~. --context-dir=nodejs --name=vulnerable-nodejs-app
 ```
 
 ## 📊 CI/CD Pipeline
