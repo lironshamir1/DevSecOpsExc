@@ -4,7 +4,7 @@ Intentionally vulnerable Node.js/Express application for practicing DevSecOps se
 
 ## Technology Stack
 
-- **Runtime**: Node.js 14.x
+- **Runtime**: Node.js 18.x
 - **Framework**: Express.js 4.x
 - **Language**: JavaScript ES6+
 - **Deployment**: OpenShift (Red Hat)
@@ -35,7 +35,7 @@ This application contains the following intentional security issues:
 ### Prerequisites
 
 ```bash
-# Install Node.js 14+
+# Install Node.js 18+
 node --version
 npm --version
 
@@ -87,7 +87,7 @@ oc login https://openshift.example.com
 oc new-project devsecops-nodejs
 
 # Deploy from Git
-oc new-app nodejs:14~https://github.com/your-org/DevSecOpsExc \
+oc new-app nodejs:18~https://github.com/your-org/DevSecOpsExc \
   --context-dir=nodejs \
   --name=vulnerable-nodejs-app
 

@@ -1,4 +1,4 @@
-FROM node:14
+FROM node:18
 
 ARG API_KEY=hardcoded-api-key-xyz
 ARG DB_PASSWORD=password123
